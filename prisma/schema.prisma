@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+////////////////////
+// ENUMS
+////////////////////
+
+enum Role {
+  NGO
+  COMPANY
+  VOLUNTEER
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+enum MilestoneStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  ACCEPTED
+  REJECTED
+}
+
+////////////////////
+// USER (BASE)
+////////////////////
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String?
+  role          Role
+  walletAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ngo        NGOProfile?
+  company    CompanyProfile?
+  volunteer  VolunteerProfile?
+}
+
+////////////////////
+// COMPANY / CSR
+////////////////////
+
+model CompanyProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  companyName   String
+  csrRegNo      String
+  totalBudget   Float
+  walletAddress String
+
+  user         User            @relation(fields: [userId], references: [id])
+  allocations  CSRAllocation[]
+}
+
+////////////////////
+// NGO
+////////////////////
+
+model NGOProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  organization   String
+  registrationNo String
+  walletAddress  String
+
+  user     User     @relation(fields: [userId], references: [id])
+  projects Project[]
+}
+
+////////////////////
+// PROJECT (CORE ENTITY)
+////////////////////
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  category    String        // Education, Healthcare, etc (used in PieChart)
+  location    String
+  status      ProjectStatus @default(DRAFT)
+  ngoId       String
+  createdAt   DateTime      @default(now())
+
+  ngo          NGOProfile            @relation(fields: [ngoId], references: [id])
+  milestones   Milestone[]
+  allocations  CSRAllocation[]
+  applications VolunteerApplication[]
+  attendances  Attendance[]
+}
+
+////////////////////
+// CSR FUND FLOW
+////////////////////
+
+model CSRAllocation {
+  id           String   @id @default(uuid())
+  companyId    String
+  projectId    String
+  amount       Float
+  escrowTxHash String   // blockchain escrow tx
+  allocatedAt  DateTime @default(now())
+
+  company CompanyProfile @relation(fields: [companyId], references: [id])
+  project Project        @relation(fields: [projectId], references: [id])
+}
+
+model Milestone {
+  id            String          @id @default(uuid())
+  projectId     String
+  title         String
+  amount        Float
+  deadline      DateTime
+  status        MilestoneStatus @default(PENDING)
+  proofIpfsHash String?
+  approvalTx    String?
+  createdAt     DateTime        @default(now())
+
+  project     Project      @relation(fields: [projectId], references: [id])
+  fundRelease FundRelease?
+}
+
+model FundRelease {
+  id            String   @id @default(uuid())
+  milestoneId   String   @unique
+  releaseTxHash String
+  releasedAt    DateTime @default(now())
+
+  milestone Milestone @relation(fields: [milestoneId], references: [id])
+}
+
+////////////////////
+// VOLUNTEER
+////////////////////
+
+model VolunteerProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  skills     String[]
+  totalHours Float    @default(0)
+
+  user         User                   @relation(fields: [userId], references: [id])
+  applications VolunteerApplication[]
+  attendances  Attendance[]
+  certificates Certificate[]
+}
+
+model VolunteerApplication {
+  id          String             @id @default(uuid())
+  volunteerId String
+  projectId   String
+  status      ApplicationStatus @default(APPLIED)
+  appliedAt   DateTime           @default(now())
+
+  volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])
+  project   Project          @relation(fields: [projectId], references: [id])
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  volunteerId  String
+  projectId    String
+  checkInTime  DateTime
+  checkOutTime DateTime?
+  hours        Float
+  geoHash      String
+  blockchainTx String?
+
+  volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])
+  project   Project          @relation(fields: [projectId], references: [id])
+}
+
+model Certificate {
+  id           String   @id @default(uuid())
+  volunteerId  String
+  projectId    String
+  title        String
+  hours        Float
+  ipfsHash     String
+  blockchainTx String
+  issuedAt     DateTime @default(now())
+
+  volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])
+}
