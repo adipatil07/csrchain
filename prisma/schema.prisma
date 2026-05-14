@@ -18,7 +18,16 @@ enum Role {
 
 enum ProjectStatus {
   DRAFT
+  UNDER_REVIEW
   ACTIVE
+  COMPLETED
+  REJECTED
+}
+
+enum ProjectLane {
+  PLANNING
+  IN_PROGRESS
+  REVIEW
   COMPLETED
 }
 
@@ -49,25 +58,9 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  ngo        NGOProfile?
-  company    CompanyProfile?
-  volunteer  VolunteerProfile?
-}
-
-////////////////////
-// COMPANY / CSR
-////////////////////
-
-model CompanyProfile {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  companyName   String
-  csrRegNo      String
-  totalBudget   Float
-  walletAddress String
-
-  user         User            @relation(fields: [userId], references: [id])
-  allocations  CSRAllocation[]
+  ngo       NGOProfile?
+  company   CompanyProfile?
+  volunteer VolunteerProfile?
 }
 
 ////////////////////
@@ -79,31 +72,79 @@ model NGOProfile {
   userId         String   @unique
   organization   String
   registrationNo String
-  walletAddress  String
+  walletAddress  String   @default("")
+  phone          String?
+  address        String?
+  focusAreas     String[]
+  description    String?
 
-  user     User     @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
   projects Project[]
 }
 
 ////////////////////
-// PROJECT (CORE ENTITY)
+// COMPANY / CSR
+////////////////////
+
+model CompanyProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  companyName   String
+  csrRegNo      String
+  totalBudget   Float
+  walletAddress String  @default("")
+  industry      String?
+  phone         String?
+  address       String?
+
+  user        User            @relation(fields: [userId], references: [id])
+  allocations CSRAllocation[]
+}
+
+////////////////////
+// PROJECT
 ////////////////////
 
 model Project {
-  id          String        @id @default(uuid())
-  title       String
-  description String
-  category    String        // Education, Healthcare, etc (used in PieChart)
-  location    String
-  status      ProjectStatus @default(DRAFT)
-  ngoId       String
-  createdAt   DateTime      @default(now())
+  id            String        @id @default(uuid())
+  proposalRef   String        @unique
+  title         String
+  description   String
+  sector        String        // Education, Healthcare, Environment, Rural Dev, Livelihood
+  location      String
+  budget        Float         @default(0)
+  beneficiaries Int           @default(0)
+  progress      Int           @default(0) // 0-100
+  status        ProjectStatus @default(DRAFT)
+  lane          ProjectLane   @default(PLANNING)
+  startDate     DateTime?
+  endDate       DateTime?
+  escrowTxHash  String?
+  escrowBalance Float         @default(0)
+  ngoId         String
+  submittedAt   DateTime?
+  createdAt     DateTime      @default(now())
 
   ngo          NGOProfile            @relation(fields: [ngoId], references: [id])
   milestones   Milestone[]
   allocations  CSRAllocation[]
   applications VolunteerApplication[]
   attendances  Attendance[]
+  documents    ProjectDocument[]
+}
+
+////////////////////
+// PROJECT DOCUMENTS
+////////////////////
+
+model ProjectDocument {
+  id         String   @id @default(uuid())
+  projectId  String
+  name       String
+  ipfsHash   String
+  uploadedAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id])
 }
 
 ////////////////////
@@ -115,7 +156,8 @@ model CSRAllocation {
   companyId    String
   projectId    String
   amount       Float
-  escrowTxHash String   // blockchain escrow tx
+  escrowTxHash String   @default("")
+  status       String   @default("PENDING") // PENDING, ACTIVE, RELEASED
   allocatedAt  DateTime @default(now())
 
   company CompanyProfile @relation(fields: [companyId], references: [id])
@@ -123,15 +165,21 @@ model CSRAllocation {
 }
 
 model Milestone {
-  id            String          @id @default(uuid())
-  projectId     String
-  title         String
-  amount        Float
-  deadline      DateTime
-  status        MilestoneStatus @default(PENDING)
-  proofIpfsHash String?
-  approvalTx    String?
-  createdAt     DateTime        @default(now())
+  id             String          @id @default(uuid())
+  milestoneRef   String          @unique
+  projectId      String
+  title          String
+  description    String?
+  amount         Float
+  deadline       DateTime
+  status         MilestoneStatus @default(PENDING)
+  proofDesc      String?         // NGO's work description on submission
+  proofIpfsHash  String?         // IPFS hash of full proof bundle
+  proofPhotoHash String?         // IPFS hash of photo evidence
+  geoLocation    String?         // Geo-coordinates
+  approvalTx     String?         // On-chain tx hash when approved
+  submittedAt    DateTime?
+  createdAt      DateTime        @default(now())
 
   project     Project      @relation(fields: [projectId], references: [id])
   fundRelease FundRelease?
@@ -151,10 +199,12 @@ model FundRelease {
 ////////////////////
 
 model VolunteerProfile {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  skills     String[]
-  totalHours Float    @default(0)
+  id           String  @id @default(uuid())
+  userId       String  @unique
+  skills       String[]
+  totalHours   Float   @default(0)
+  location     String?
+  availability String?
 
   user         User                   @relation(fields: [userId], references: [id])
   applications VolunteerApplication[]
@@ -163,24 +213,24 @@ model VolunteerProfile {
 }
 
 model VolunteerApplication {
-  id          String             @id @default(uuid())
+  id          String            @id @default(uuid())
   volunteerId String
   projectId   String
   status      ApplicationStatus @default(APPLIED)
-  appliedAt   DateTime           @default(now())
+  appliedAt   DateTime          @default(now())
 
   volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])
   project   Project          @relation(fields: [projectId], references: [id])
 }
 
 model Attendance {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   volunteerId  String
   projectId    String
   checkInTime  DateTime
   checkOutTime DateTime?
-  hours        Float
-  geoHash      String
+  hours        Float     @default(0)
+  geoHash      String    @default("")
   blockchainTx String?
 
   volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])
@@ -193,8 +243,8 @@ model Certificate {
   projectId    String
   title        String
   hours        Float
-  ipfsHash     String
-  blockchainTx String
+  ipfsHash     String   @default("")
+  blockchainTx String   @default("")
   issuedAt     DateTime @default(now())
 
   volunteer VolunteerProfile @relation(fields: [volunteerId], references: [id])

@@ -16,14 +16,14 @@ const UnifiedSignup = () => {
     ngoName: '',
     registrationNumber: '',
     address: '',
-    focusAreas: [],
+    focusAreas: [] as string[],
     description: '',
     companyName: '',
     cinNumber: '',
     csrBudget: '',
     industry: '',
     fullName: '',
-    skills: [],
+    skills: [] as string[],
     availability: ''
   });
 
@@ -54,17 +54,17 @@ const UnifiedSignup = () => {
   const focusAreaOptions = ['Education', 'Healthcare', 'Environment', 'Rural Development', 'Women Empowerment', 'Skill Development'];
   const skillOptions = ['Teaching', 'Healthcare', 'Construction', 'Technology', 'Administration', 'Marketing'];
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (field, value) => {
+  const handleCheckboxChange = (field: 'focusAreas' | 'skills', value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
+      [field]: (prev[field] as string[]).includes(value)
+        ? (prev[field] as string[]).filter((item: string) => item !== value)
+        : [...(prev[field] as string[]), value]
     }));
   };
 
@@ -347,7 +347,7 @@ const UnifiedSignup = () => {
                             name="address"
                             value={formData.address}
                             onChange={handleInputChange}
-                            rows="3"
+                            rows={3}
                             className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] text-[#1a2847] resize-none"
                             placeholder="Complete registered address"
                           ></textarea>
@@ -377,7 +377,7 @@ const UnifiedSignup = () => {
                           name="description"
                           value={formData.description}
                           onChange={handleInputChange}
-                          rows="4"
+                          rows={4}
                           className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] text-[#1a2847] resize-none"
                           placeholder="Brief description of your NGO's mission and activities..."
                         ></textarea>
@@ -461,7 +461,7 @@ const UnifiedSignup = () => {
                             name="address"
                             value={formData.address}
                             onChange={handleInputChange}
-                            rows="3"
+                            rows={3}
                             className="w-full pl-10 pr-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] text-[#1a2847] resize-none"
                             placeholder="Complete registered address"
                           ></textarea>
