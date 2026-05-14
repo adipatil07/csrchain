@@ -71,18 +71,24 @@ export default function ProfilePage() {
               <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full border-4 border-white text-white text-3xl font-bold shadow-lg">
                 AS
               </div>
-              <h2 className="text-xl font-bold text-gray-800 mt-3">Aarav Sharma</h2>
+              <h2 className="text-xl font-bold text-gray-800 mt-3">
+                Aarav Sharma
+              </h2>
               <p className="text-sm text-gray-500">Passionate changemaker</p>
               <div className="flex items-center justify-center gap-1 my-3">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
                     className={`w-5 h-5 ${
-                      s <= 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      s <= 4
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
                     }`}
                   />
                 ))}
-                <span className="ml-2 text-sm font-semibold text-gray-700">4.8</span>
+                <span className="ml-2 text-sm font-semibold text-gray-700">
+                  4.8
+                </span>
               </div>
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-100">
@@ -107,7 +113,9 @@ export default function ProfilePage() {
 
           {/* Quick stats */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Stats</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Quick Stats
+            </h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                 <Clock className="w-5 h-5 text-blue-600" />
@@ -135,7 +143,9 @@ export default function ProfilePage() {
 
           {/* Social */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Social Links</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Social Links
+            </h3>
             <div className="space-y-2">
               {[
                 { icon: Linkedin, label: "linkedin.com/in/aaravsharma" },
@@ -171,24 +181,34 @@ export default function ProfilePage() {
               />
             ) : (
               <p className="text-gray-700 leading-relaxed">
-                Third-year Computer Science student at IIT Bombay. Passionate about
-                leveraging technology for social good, especially in education and
-                environmental sustainability. I have been volunteering across Mumbai
-                since 2023.
+                Third-year Computer Science student at IIT Bombay. Passionate
+                about leveraging technology for social good, especially in
+                education and environmental sustainability. I have been
+                volunteering across Mumbai since 2023.
               </p>
             )}
           </div>
 
           {/* Personal info */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Personal Information</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Personal Information
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { label: "Full Name", value: "Aarav Sharma", icon: null },
                 { label: "Email", value: "aarav.sharma@hope.org", icon: Mail },
                 { label: "Phone", value: "+91 98765 43210", icon: Phone },
-                { label: "Location", value: "Mumbai, Maharashtra", icon: MapPin },
-                { label: "Date of Birth", value: "August 14, 2003", icon: Calendar },
+                {
+                  label: "Location",
+                  value: "Mumbai, Maharashtra",
+                  icon: MapPin,
+                },
+                {
+                  label: "Date of Birth",
+                  value: "August 14, 2003",
+                  icon: Calendar,
+                },
                 { label: "Blood Group", value: "O+", icon: null },
               ].map((field, idx) => {
                 const Icon = field.icon;
@@ -266,7 +286,9 @@ export default function ProfilePage() {
 
           {/* Availability */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Availability Schedule</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Availability Schedule
+            </h3>
             <div className="grid grid-cols-7 gap-2">
               {availability.map((a, idx) => (
                 <div
@@ -275,8 +297,8 @@ export default function ProfilePage() {
                     a.slot === "Unavailable"
                       ? "border-gray-200 bg-gray-50 text-gray-400"
                       : a.slot === "Full Day"
-                      ? "border-green-300 bg-green-50 text-green-700"
-                      : "border-blue-300 bg-blue-50 text-blue-700"
+                        ? "border-green-300 bg-green-50 text-green-700"
+                        : "border-blue-300 bg-blue-50 text-blue-700"
                   }`}
                 >
                   <p className="text-xs font-bold">{a.day}</p>

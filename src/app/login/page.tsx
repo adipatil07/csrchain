@@ -8,18 +8,42 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [role, setRole] = useState('NGO'); // default role
+  const [role, setRole] = useState('NGO');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = () => {
-    console.log('Login submitted:', { email, password, rememberMe, role });
+  const handleSubmit = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Navigation logic
-    if (role === 'NGO') {
-      window.location.href = "/ngodashboard";
-    } else if (role === 'Company') {
-      window.location.href = "/companydashboard";
-    } else if (role === 'Volunteer') {
-      window.location.href = "/volunteerdashboard";
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('role', data.role);
+      localStorage.setItem('userId', data.userId);
+
+      if (data.role === 'NGO') {
+        window.location.href = '/ngodashboard';
+      } else if (data.role === 'COMPANY') {
+        window.location.href = '/companydashboard';
+      } else if (data.role === 'VOLUNTEER') {
+        window.location.href = '/volunteerdashboard';
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,11 +167,16 @@ export default function LoginPage() {
               </button>
             </div>
 
+            {error && (
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            )}
+
             <button
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-blue-900/50 transition-all transform hover:scale-[1.02]"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-lg shadow-lg hover:shadow-blue-900/50 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
           </div>

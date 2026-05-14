@@ -68,8 +68,48 @@ const UnifiedSignup = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', { role: selectedRole, ...formData });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async () => {
+    setError('');
+
+    if (!selectedRole) {
+      setError('Please select a role.');
+      return;
+    }
+    if (!formData.email || !formData.password) {
+      setError('Email and password are required.');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    const roleMap: Record<string, string> = { ngo: 'NGO', company: 'COMPANY', volunteer: 'VOLUNTEER' };
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, role: roleMap[selectedRole] }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Signup failed');
+        return;
+      }
+
+      window.location.href = '/login';
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -515,11 +555,16 @@ const UnifiedSignup = () => {
                     </label>
                   </div>
 
+                  {error && (
+                    <p className="text-red-500 text-sm text-center">{error}</p>
+                  )}
+
                   <button
                     onClick={handleSubmit}
-                    className="w-full py-3 bg-gradient-to-r from-[#0ea5e9] to-[#06b6d4] hover:from-[#0284c7] hover:to-[#0891b2] text-white font-semibold rounded-lg transition-all shadow-lg"
+                    disabled={loading}
+                    className="w-full py-3 bg-gradient-to-r from-[#0ea5e9] to-[#06b6d4] hover:from-[#0284c7] hover:to-[#0891b2] text-white font-semibold rounded-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create Account
+                    {loading ? 'Creating Account...' : 'Create Account'}
                   </button>
                 </>
               )}
