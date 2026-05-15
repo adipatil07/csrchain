@@ -5,13 +5,6 @@ import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, DollarSign, Target, CheckCircle, Clock, AlertCircle, ChevronRight, Link2, Loader2 } from 'lucide-react';
 
-const projectDistribution = [
-  { name: 'Education', value: 35, color: '#3b82f6' },
-  { name: 'Healthcare', value: 25, color: '#06b6d4' },
-  { name: 'Environment', value: 20, color: '#8b5cf6' },
-  { name: 'Rural Dev', value: 20, color: '#10b981' },
-];
-
 interface Stats {
   totalReceivedFormatted: string;
   activeProjects: number;
@@ -32,11 +25,24 @@ interface Activity {
   id: string; type: string; message: string; time: string;
 }
 
+interface FlowPoint { month: string; received: number; utilized: number }
+interface SectorSlice { name: string; value: number; color: string }
+interface BlockchainBanner {
+  escrowContract: string;
+  escrowBalanceFormatted: string;
+  verifiedMilestones: number;
+  totalMilestones: number;
+  lastTx: string;
+}
+
 export default function NGODashboardOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
   const [pendingMilestones, setPendingMilestones] = useState<PendingMilestone[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [fundFlowData, setFundFlowData] = useState<FlowPoint[]>([]);
+  const [sectorData, setSectorData] = useState<SectorSlice[]>([]);
+  const [blockchain, setBlockchain] = useState<BlockchainBanner | null>(null);
   const [loading, setLoading] = useState(true);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -50,6 +56,9 @@ export default function NGODashboardOverview() {
       setActiveProjects(data.activeProjects || []);
       setPendingMilestones(data.pendingMilestones || []);
       setRecentActivities(data.recentActivities || []);
+      setFundFlowData(data.fundFlowData || []);
+      setSectorData(data.sectorData || []);
+      if (data.blockchainBanner) setBlockchain(data.blockchainBanner);
     } catch {
       console.error('Failed to load dashboard');
     } finally {
@@ -58,17 +67,6 @@ export default function NGODashboardOverview() {
   }, [token]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
-
-  // Static fund chart data (will be made dynamic in later iteration)
-  const fundData = [
-    { month: 'Jan', received: 450000, utilized: 380000 },
-    { month: 'Feb', received: 520000, utilized: 480000 },
-    { month: 'Mar', received: 480000, utilized: 450000 },
-    { month: 'Apr', received: 610000, utilized: 550000 },
-    { month: 'May', received: 550000, utilized: 520000 },
-    { month: 'Jun', received: 670000, utilized: 630000 },
-    { month: 'Jul', received: 570000, utilized: 230000 },
-  ];
 
   if (loading) {
     return (
@@ -94,7 +92,7 @@ export default function NGODashboardOverview() {
           <div className="relative">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm"><DollarSign size={24} /></div>
-              <span className="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">+12.5%</span>
+              <span className="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Live</span>
             </div>
             <p className="text-blue-100 text-sm font-medium mb-1">Total Funds Received</p>
             <h3 className="text-3xl font-bold">{stats?.totalReceivedFormatted || '₹0'}</h3>
@@ -114,7 +112,9 @@ export default function NGODashboardOverview() {
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl"><TrendingUp className="text-white" size={24} /></div>
-            <span className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full">Excellent</span>
+            <span className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full">
+              {parseFloat(stats?.utilization || '0') > 70 ? 'Excellent' : 'On Track'}
+            </span>
           </div>
           <p className="text-slate-600 text-sm font-medium mb-1">Fund Utilization</p>
           <h3 className="text-3xl font-bold text-slate-900">{stats?.utilization || '0%'}</h3>
@@ -138,12 +138,23 @@ export default function NGODashboardOverview() {
           <div className="p-3 rounded-xl bg-white/10 backdrop-blur"><Link2 size={24} /></div>
           <div>
             <p className="text-xs uppercase tracking-wider text-blue-200">Polygon Escrow Contract</p>
-            <p className="font-mono text-sm">0x8f3C...a91B</p>
+            <p className="font-mono text-sm">{blockchain?.escrowContract || '—'}</p>
           </div>
         </div>
-        <div><p className="text-xs uppercase tracking-wider text-blue-200">Escrow Balance</p><p className="text-2xl font-bold">₹47,82,000</p></div>
-        <div><p className="text-xs uppercase tracking-wider text-blue-200">Verified Milestones</p><p className="text-2xl font-bold">37 / 42</p></div>
-        <div><p className="text-xs uppercase tracking-wider text-blue-200">Last Tx</p><p className="font-mono text-sm">0x4a2e...7d1c</p></div>
+        <div>
+          <p className="text-xs uppercase tracking-wider text-blue-200">Escrow Balance</p>
+          <p className="text-2xl font-bold">{blockchain?.escrowBalanceFormatted || '₹0'}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wider text-blue-200">Verified Milestones</p>
+          <p className="text-2xl font-bold">
+            {blockchain ? `${blockchain.verifiedMilestones} / ${blockchain.totalMilestones}` : '0 / 0'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wider text-blue-200">Last Tx</p>
+          <p className="font-mono text-sm">{blockchain?.lastTx || '—'}</p>
+        </div>
       </div>
 
       {/* Charts */}
@@ -151,40 +162,56 @@ export default function NGODashboardOverview() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Fund Flow Analysis</h3>
-            <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5"><option>Last 6 months</option></select>
+            <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Last 6 months</span>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={fundData}>
-              <defs>
-                <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1e40af" stopOpacity={0.9}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                </linearGradient>
-                <linearGradient id="colorUtilized" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.9}/><stop offset="95%" stopColor="#22d3ee" stopOpacity={0.8}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="month" stroke="#94a3b8" /><YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} />
-              <Legend />
-              <Bar dataKey="received" fill="url(#colorReceived)" name="Funds Received" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="utilized" fill="url(#colorUtilized)" name="Funds Utilized" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {fundFlowData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
+              No fund data yet. Fund flow will appear once companies allocate to your projects.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={fundFlowData}>
+                <defs>
+                  <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1e40af" stopOpacity={0.9}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  </linearGradient>
+                  <linearGradient id="colorUtilized" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.9}/><stop offset="95%" stopColor="#22d3ee" stopOpacity={0.8}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="month" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} />
+                <Tooltip
+                  formatter={(v: number) => `₹${(v / 100000).toFixed(2)} L`}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                />
+                <Legend />
+                <Bar dataKey="received" fill="url(#colorReceived)" name="Funds Received" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="utilized" fill="url(#colorUtilized)" name="Funds Utilized" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 mb-4">Project Categories</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={projectDistribution} cx="50%" cy="50%" labelLine={false}
-                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                outerRadius={85} fill="#8884d8" dataKey="value">
-                {projectDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          {sectorData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-slate-400 text-sm text-center px-4">
+              No projects yet. Sector breakdown will appear once you create proposals.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={sectorData} cx="50%" cy="50%" labelLine={false}
+                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  outerRadius={85} fill="#8884d8" dataKey="value">
+                  {sectorData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -270,8 +297,9 @@ export default function NGODashboardOverview() {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold text-slate-900">Pending Milestones</h3>
           <div className="flex space-x-2">
-            <button className="text-sm px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition">Filter</button>
-            <button className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Export</button>
+            <Link href="/ngodashboard/milestones" className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+              Submit Proof
+            </Link>
           </div>
         </div>
         {pendingMilestones.length === 0 ? (

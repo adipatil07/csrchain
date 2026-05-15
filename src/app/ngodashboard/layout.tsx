@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bell, Settings, LayoutDashboard, FolderKanban, Upload, Activity,
-  Wallet, UserCheck, BarChart3, Menu, X, ChevronRight, Search,
+  Wallet, UserCheck, BarChart3, Menu, X, ChevronRight, Search, LogOut,
 } from 'lucide-react';
 
 const navItems = [
@@ -28,13 +28,60 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/ngodashboard/reports': { title: 'Reports & Analytics', subtitle: 'Measure impact, efficiency and reach.' },
 };
 
+function decodeToken(token: string): { name?: string; email?: string; org?: string } {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return { name: payload.name, email: payload.email };
+  } catch {
+    return {};
+  }
+}
+
 export default function NGODashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userName, setUserName] = useState('NGO Admin');
+  const [userEmail, setUserEmail] = useState('');
+  const [orgName, setOrgName] = useState('NGO Dashboard');
+  const [orgInitial, setOrgInitial] = useState('N');
   const pathname = usePathname() || '/ngodashboard';
   const meta = pageMeta[pathname] || pageMeta['/ngodashboard'];
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decoded = decodeToken(token);
+      if (decoded.name) {
+        setUserName(decoded.name);
+        setOrgInitial(decoded.name.charAt(0).toUpperCase());
+      }
+      if (decoded.email) setUserEmail(decoded.email);
+    }
+    // Fetch org name from profile API
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/ngo/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.profile?.organization) {
+            setOrgName(data.profile.organization);
+            setOrgInitial(data.profile.organization.charAt(0).toUpperCase());
+          }
+        }
+      } catch { /* ignore */ }
+    };
+    fetchProfile();
+  }, []);
+
   const isActive = (item: typeof navItems[number]) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + '/');
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
@@ -43,10 +90,12 @@ export default function NGODashboardLayout({ children }: { children: React.React
           <div className="p-6 border-b border-blue-800/50">
             <div className="flex items-center justify-between">
               <div className={`flex items-center space-x-3 ${!sidebarOpen && 'justify-center'}`}>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">H</div>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">
+                  {orgInitial}
+                </div>
                 {sidebarOpen && (
                   <div>
-                    <h1 className="text-lg font-bold">Hope Foundation</h1>
+                    <h1 className="text-lg font-bold truncate max-w-[150px]">{orgName}</h1>
                     <p className="text-blue-300 text-xs">NGO Dashboard</p>
                   </div>
                 )}
@@ -85,12 +134,19 @@ export default function NGODashboardLayout({ children }: { children: React.React
 
           <div className="p-4 border-t border-blue-800/50">
             <div className={`flex items-center space-x-3 ${!sidebarOpen && 'justify-center'}`}>
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center font-bold">A</div>
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                {userName.charAt(0).toUpperCase()}
+              </div>
               {sidebarOpen && (
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Anjali Sharma</p>
-                  <p className="text-xs text-blue-300">admin@hopefoundation.org</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  <p className="text-xs text-blue-300 truncate">{userEmail}</p>
                 </div>
+              )}
+              {sidebarOpen && (
+                <button onClick={handleLogout} title="Logout" className="p-1.5 rounded-lg hover:bg-blue-800 transition">
+                  <LogOut size={16} className="text-blue-300" />
+                </button>
               )}
             </div>
           </div>

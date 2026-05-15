@@ -69,6 +69,21 @@ export async function GET(req: Request) {
       utilized: p.milestones.reduce((s, m) => s + m.amount, 0),
     }));
 
+    // ── Monthly flow chart (last 7 months) ──────────────────────────────────
+    const now2 = new Date();
+    const flowData = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now2.getFullYear(), now2.getMonth() - 6 + i, 1);
+      const m = d.toLocaleString('en-IN', { month: 'short' });
+      const received = allocations
+        .filter(a => { const ad = new Date(a.allocatedAt); return ad.getFullYear() === d.getFullYear() && ad.getMonth() === d.getMonth(); })
+        .reduce((s, a) => s + a.amount, 0);
+      const utilized = fundReleases
+        .filter(r => { const rd = new Date(r.releasedAt); return rd.getFullYear() === d.getFullYear() && rd.getMonth() === d.getMonth(); })
+        .reduce((s, r) => s + r.milestone.amount, 0);
+      const escrowed = received - utilized;
+      return { m, received, utilized, escrowed: escrowed > 0 ? escrowed : 0 };
+    });
+
     return NextResponse.json({
       transactions,
       stats: {
@@ -87,6 +102,7 @@ export async function GET(req: Request) {
           .reduce((s, r) => s + r.milestone.amount, 0),
       },
       perProject,
+      flowData,
     });
   } catch (e) {
     return serverError(e);
