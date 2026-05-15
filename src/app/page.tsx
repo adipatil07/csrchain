@@ -240,8 +240,12 @@ export default function LandingPage() {
               <a href="#roles" className="block text-gray-300 hover:text-blue-400 px-4 py-2">User Roles</a>
               <a href="#benefits" className="block text-gray-300 hover:text-blue-400 px-4 py-2">Benefits</a>
               <div className="flex flex-col space-y-2 pt-4 px-4">
-                <Button variant="ghost" className="w-full text-gray-300 hover:bg-blue-900/50">Login</Button>
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700">Sign Up</Button>
+                <Link href="/login" className="w-full">
+                  <Button variant="ghost" className="w-full text-gray-300 hover:bg-blue-900/50">Login</Button>
+                </Link>
+                <Link href="/signup" className="w-full">
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700">Sign Up</Button>
+                </Link>
               </div>
             </div>
           )}
@@ -266,12 +270,16 @@ export default function LandingPage() {
             A unified blockchain-powered platform connecting NGOs, CSR companies, volunteers, and regulators for transparent, accountable, and impactful social responsibility initiatives.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-lg px-8 shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105">
-              Get Started <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 border-blue-500 text-blue-400 hover:bg-blue-900/30 transition-all transform hover:scale-105">
-              Watch Demo
-            </Button>
+            <Link href="/signup">
+              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-lg px-8 shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105">
+                Get Started <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button size="lg" variant="outline" className="text-lg px-8 border-blue-500 text-blue-400 hover:bg-blue-900/30 transition-all transform hover:scale-105">
+                Login to Portal
+              </Button>
+            </Link>
           </div>
 
           {/* Scroll Indicator */}
@@ -446,12 +454,16 @@ export default function LandingPage() {
             Join the future of transparent and accountable social responsibility
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 text-lg px-8 shadow-2xl transform hover:scale-105 transition-all">
-              Sign Up Now
-            </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 text-lg px-8 transform hover:scale-105 transition-all">
-              Request Demo
-            </Button>
+            <Link href="/signup">
+              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 text-lg px-8 shadow-2xl transform hover:scale-105 transition-all">
+                Sign Up Now
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 text-lg px-8 transform hover:scale-105 transition-all">
+                Login to Portal
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -18,20 +18,13 @@ interface PerProject {
   name: string; received: number; utilized: number;
 }
 
-const FLOW_DATA = [
-  { m: 'Oct', received: 3200000, utilized: 2800000, escrowed: 400000 },
-  { m: 'Nov', received: 4100000, utilized: 3600000, escrowed: 500000 },
-  { m: 'Dec', received: 3800000, utilized: 3500000, escrowed: 300000 },
-  { m: 'Jan', received: 5200000, utilized: 4700000, escrowed: 500000 },
-  { m: 'Feb', received: 4700000, utilized: 4200000, escrowed: 500000 },
-  { m: 'Mar', received: 6100000, utilized: 5300000, escrowed: 800000 },
-  { m: 'Apr', received: 4500000, utilized: 2100000, escrowed: 2400000 },
-];
+interface FlowPoint { m: string; received: number; utilized: number; escrowed: number }
 
 export default function FundsPage() {
   const [stats, setStats] = useState<FundStats | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [perProject, setPerProject] = useState<PerProject[]>([]);
+  const [flowData, setFlowData] = useState<FlowPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -44,6 +37,7 @@ export default function FundsPage() {
       if (data.stats) setStats(data.stats);
       setTransactions(data.transactions || []);
       setPerProject(data.perProject || []);
+      setFlowData(data.flowData || []);
     } catch {
       console.error('Failed to load funds');
     } finally {
@@ -110,7 +104,7 @@ export default function FundsPage() {
             <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5"><option>Last 7 months</option></select>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={FLOW_DATA}>
+            <AreaChart data={flowData.length ? flowData : []}>
               <defs>
                 <linearGradient id="rcv" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
