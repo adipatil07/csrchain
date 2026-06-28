@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized, notFound, serverError } from "@/lib/api-helpers";
+import { lockFundsOnChain } from "@/lib/blockchain";
 
 /** PUT /api/company/projects/[id]/approve  — approve proposal & create escrow allocation */
 export async function PUT(
@@ -23,10 +24,7 @@ export async function PUT(
     const project = await prisma.project.findUnique({ where: { id } });
     if (!project) return notFound("Project not found");
 
-    // Generate mock escrow tx hash
-    const escrowTxHash =
-      "0x" +
-      Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+    const escrowTxHash = await lockFundsOnChain(id, company.id, 0.001);
 
     const allocationAmount = amount ?? project.budget;
 

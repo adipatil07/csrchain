@@ -16,6 +16,7 @@ import {
   Search,
   Shield,
   LogOut,
+  Cpu,
 } from "lucide-react";
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/companydashboard/compliance", icon: FileText, label: "Compliance & Reports" },
   { href: "/companydashboard/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/companydashboard/profile", icon: Building2, label: "Organization Profile" },
+  { href: "/blockchain", icon: Cpu, label: "Blockchain Explorer" },
 ];
 
 function decodeToken(token: string): { name?: string; email?: string } {

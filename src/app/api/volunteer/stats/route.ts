@@ -21,31 +21,46 @@ export async function GET(req: Request) {
         },
         certificates: {
           orderBy: { issuedAt: "desc" },
-          take: 5,
         },
       },
     });
 
     if (!profile) return NextResponse.json({ message: "Profile not found" }, { status: 404 });
 
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
     // Stats
     const totalHours = profile.totalHours;
     const projectsJoined = profile.applications.filter((a) => a.status === "ACCEPTED").length;
     const certificatesCount = profile.certificates.length;
 
-    // Upcoming events = accepted applications with future projects
+    // Upcoming events = accepted/applied applications
     const upcomingEvents = profile.applications
       .filter((a) => a.status === "ACCEPTED" || a.status === "APPLIED")
       .slice(0, 5)
-      .map((a) => ({
-        id: a.id,
-        title: a.project.title,
-        ngo: a.project.ngo.user.name,
-        date: a.project.startDate?.toISOString().split("T")[0] ?? "TBD",
-        location: a.project.location,
-        status: a.status === "ACCEPTED" ? "Accepted" : "Applied",
-        hours: 4, // default estimated hours
-      }));
+      .map((a) => {
+        // Estimate hours from attendance records on this project
+        const projectAttendances = profile.attendances.filter(
+          (att) => att.projectId === a.projectId && att.checkOutTime,
+        );
+        const avgHours =
+          projectAttendances.length > 0
+            ? Math.round(
+                projectAttendances.reduce((s, att) => s + att.hours, 0) /
+                  projectAttendances.length,
+              )
+            : 4;
+        return {
+          id: a.id,
+          title: a.project.title,
+          ngo: a.project.ngo.user.name,
+          date: a.project.startDate?.toISOString().split("T")[0] ?? "TBD",
+          location: a.project.location,
+          status: a.status === "ACCEPTED" ? "Accepted" : "Applied",
+          hours: avgHours,
+        };
+      });
 
     // Hours trend: last 6 months of attendance grouped by month
     const sixMonthsAgo = new Date();
@@ -59,13 +74,38 @@ export async function GET(req: Request) {
       const key = monthNames[a.checkInTime.getMonth()];
       trendMap[key] = (trendMap[key] ?? 0) + a.hours;
     });
-    // Build last 6 months in order
-    const now = new Date();
     const hoursTrend = Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
       const key = monthNames[d.getMonth()];
       return { month: key, hours: Math.round(trendMap[key] ?? 0) };
     });
+
+    // ── Real trend badges from DB ─────────────────────────────────────────────
+    const thisMonthKey = monthNames[now.getMonth()];
+    const lastMonthKey = monthNames[new Date(now.getFullYear(), now.getMonth() - 1, 1).getMonth()];
+    const thisMonthHours = trendMap[thisMonthKey] ?? 0;
+    const lastMonthHours = trendMap[lastMonthKey] ?? 0;
+    const hoursPct =
+      lastMonthHours > 0
+        ? Math.round(((thisMonthHours - lastMonthHours) / lastMonthHours) * 100)
+        : thisMonthHours > 0 ? 100 : 0;
+
+    const newProjectsThisMonth = profile.applications.filter(
+      (a) => a.status === "ACCEPTED" && a.appliedAt >= thirtyDaysAgo,
+    ).length;
+
+    const newCertsThisMonth = profile.certificates.filter(
+      (c) => c.issuedAt >= thirtyDaysAgo,
+    ).length;
+
+    const trends = {
+      hours:
+        hoursPct > 0 ? `+${hoursPct}%` : hoursPct < 0 ? `${hoursPct}%` : "—",
+      projects:
+        newProjectsThisMonth > 0 ? `+${newProjectsThisMonth} this month` : "—",
+      certificates: newCertsThisMonth > 0 ? `${newCertsThisMonth} new` : "—",
+      upcoming: upcomingEvents.length > 0 ? "This week" : "—",
+    };
 
     // Cause breakdown from attended projects (grouped by sector)
     const sectorColors: Record<string, string> = {
@@ -87,20 +127,20 @@ export async function GET(req: Request) {
       color: sectorColors[name] ?? "#94a3b8",
     }));
 
-    // Recent activity (last 3 combined: attendances + certificates)
+    // Recent activity (last 3 attendances + last 2 certificates combined)
     const recentActivity = [
       ...profile.attendances.slice(0, 3).map((a) => ({
         action: a.checkOutTime ? "Completed" : "Checked In",
         project: a.project.title,
         date: a.checkInTime.toISOString().split("T")[0],
-        tx: a.blockchainTx ?? "0x" + Math.random().toString(16).slice(2, 10) + "...",
+        tx: a.blockchainTx ?? "pending",
         type: "attendance",
       })),
       ...profile.certificates.slice(0, 2).map((c) => ({
         action: "Certificate Issued",
         project: c.title,
         date: c.issuedAt.toISOString().split("T")[0],
-        tx: c.blockchainTx || "0x" + Math.random().toString(16).slice(2, 10) + "...",
+        tx: c.blockchainTx || "pending",
         type: "certificate",
       })),
     ]
@@ -115,6 +155,7 @@ export async function GET(req: Request) {
         certificatesCount,
         upcomingCount: upcomingEvents.length,
       },
+      trends,
       upcomingEvents,
       hoursTrend,
       causeBreakdown,

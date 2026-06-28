@@ -65,9 +65,17 @@ interface Activity {
   type: string;
 }
 
+interface Trends {
+  hours: string;
+  projects: string;
+  certificates: string;
+  upcoming: string;
+}
+
 interface DashData {
   name: string;
   stats: Stats;
+  trends: Trends;
   upcomingEvents: UpcomingEvent[];
   hoursTrend: HoursPoint[];
   causeBreakdown: CauseSlice[];
@@ -107,33 +115,32 @@ export default function VolunteerDashboardPage() {
     );
   }
 
-  // Fallback stat cards config
   const statCards = [
     {
       label: "Hours Contributed",
       value: data?.stats.totalHours ?? 0,
-      trend: "+12%",
+      trend: data?.trends.hours ?? "—",
       icon: Clock,
       color: "from-blue-500 to-cyan-500",
     },
     {
       label: "Projects Joined",
       value: data?.stats.projectsJoined ?? 0,
-      trend: "+2",
+      trend: data?.trends.projects ?? "—",
       icon: CheckCircle,
       color: "from-purple-500 to-pink-500",
     },
     {
       label: "Certificates Earned",
       value: data?.stats.certificatesCount ?? 0,
-      trend: "New",
+      trend: data?.trends.certificates ?? "—",
       icon: Award,
       color: "from-orange-500 to-red-500",
     },
     {
       label: "Upcoming Events",
       value: data?.stats.upcomingCount ?? 0,
-      trend: "This week",
+      trend: data?.trends.upcoming ?? "—",
       icon: Star,
       color: "from-green-500 to-teal-500",
     },
@@ -337,12 +344,18 @@ export default function VolunteerDashboardPage() {
                     </p>
                     <p className="text-xs text-gray-500">{activity.date}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-mono">
-                    <Link2 className="w-3 h-3" />
-                    {activity.tx.length > 12
-                      ? `${activity.tx.slice(0, 6)}...${activity.tx.slice(-4)}`
-                      : activity.tx}
-                  </span>
+                  {activity.tx && activity.tx !== "pending" ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-mono">
+                      <Link2 className="w-3 h-3" />
+                      {activity.tx.length > 12
+                        ? `${activity.tx.slice(0, 6)}...${activity.tx.slice(-4)}`
+                        : activity.tx}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs">
+                      Pending
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

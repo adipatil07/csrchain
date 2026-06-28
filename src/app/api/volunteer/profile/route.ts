@@ -28,6 +28,12 @@ export async function GET(req: Request) {
 
     const profile = dbUser.volunteer;
 
+    // Rating: starts at 3.0, +0.2 per 10 hours, +0.3 per certificate, capped at 5.0
+    const rawRating = 3.0
+      + Math.min(profile.totalHours / 10, 5) * 0.2
+      + Math.min(profile.certificates.length, 5) * 0.3;
+    const rating = Math.min(5.0, Math.round(rawRating * 10) / 10);
+
     return NextResponse.json({
       id: profile.id,
       name: dbUser.name,
@@ -39,6 +45,7 @@ export async function GET(req: Request) {
       walletAddress: dbUser.walletAddress,
       certificatesCount: profile.certificates.length,
       projectsCompleted: profile.applications.length,
+      rating,
     });
   } catch (e) {
     return serverError(e);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized, notFound, serverError } from "@/lib/api-helpers";
+import { recordAttendanceOnChain } from "@/lib/blockchain";
 
 /** PUT /api/volunteer/attendance/[id]/checkout */
 export async function PUT(
@@ -28,10 +29,14 @@ export async function PUT(
     const diffMs = checkOutTime.getTime() - attendance.checkInTime.getTime();
     const hours = Math.round((diffMs / 3_600_000) * 10) / 10;
 
-    // Mock blockchain tx
-    const blockchainTx =
-      "0x" +
-      Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+    const blockchainTx = await recordAttendanceOnChain(
+      id,
+      profile.id,
+      attendance.projectId,
+      attendance.checkInTime,
+      checkOutTime,
+      hours
+    );
 
     const updated = await prisma.attendance.update({
       where: { id },

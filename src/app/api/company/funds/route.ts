@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized, badRequest, serverError } from "@/lib/api-helpers";
+import { lockFundsOnChain } from "@/lib/blockchain";
 
 /** GET /api/company/funds */
 export async function GET(req: Request) {
@@ -130,9 +131,7 @@ export async function POST(req: Request) {
     const project = await prisma.project.findUnique({ where: { id: projectId } });
     if (!project || project.status !== "ACTIVE") return badRequest("Project is not active");
 
-    const escrowTxHash =
-      "0x" +
-      Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+    const escrowTxHash = await lockFundsOnChain(projectId, company.id, 0.001);
 
     const allocation = await prisma.cSRAllocation.create({
       data: {

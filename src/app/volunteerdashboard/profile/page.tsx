@@ -28,19 +28,20 @@ interface ProfileData {
   walletAddress: string | null;
   certificatesCount: number;
   projectsCompleted: number;
+  rating: number;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const SLOT_OPTIONS = ["Unavailable", "Morning", "Afternoon", "Evening", "Full Day"];
 
 const defaultAvailability: Record<string, string> = {
-  Mon: "Evening",
+  Mon: "Unavailable",
   Tue: "Unavailable",
-  Wed: "Evening",
+  Wed: "Unavailable",
   Thu: "Unavailable",
-  Fri: "Evening",
-  Sat: "Full Day",
-  Sun: "Full Day",
+  Fri: "Unavailable",
+  Sat: "Unavailable",
+  Sun: "Unavailable",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -163,11 +164,11 @@ export default function ProfilePage() {
                   <Star
                     key={s}
                     className={`w-5 h-5 ${
-                      s <= 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      s <= Math.round(profile?.rating ?? 3) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                     }`}
                   />
                 ))}
-                <span className="ml-2 text-sm font-semibold text-gray-700">4.8</span>
+                <span className="ml-2 text-sm font-semibold text-gray-700">{profile?.rating?.toFixed(1) ?? "3.0"}</span>
               </div>
               <div className="flex items-center justify-center gap-2 mb-4">
                 <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-100">

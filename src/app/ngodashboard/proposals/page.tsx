@@ -221,8 +221,10 @@ export default function ProposalsPage() {
                 <input type="file" className="hidden" onChange={e => setFileName(e.target.files?.[0]?.name || '')} />
               </label>
               {fileName && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-blue-700 font-mono bg-blue-50 rounded-lg px-3 py-2">
-                  <Link2 size={14} /> ipfs://Qm{Math.random().toString(36).substring(2, 12)}...
+                <div className="mt-2 flex items-center gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <Link2 size={14} className="text-blue-500" />
+                  <span className="truncate">{fileName}</span>
+                  <span className="ml-auto text-slate-400 whitespace-nowrap">IPFS upload pending submission</span>
                 </div>
               )}
             </div>

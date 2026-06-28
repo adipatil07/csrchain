@@ -11,6 +11,7 @@ import {
   QrCode,
   Award,
   LogOut,
+  Cpu,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/volunteerdashboard/certificates", label: "Certificates", icon: Award },
   { href: "/volunteerdashboard/profile", label: "Profile", icon: User },
   { href: "/volunteerdashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/blockchain", label: "Blockchain Explorer", icon: Cpu },
 ];
 
 function decodeToken(token: string): { name?: string; email?: string } {

@@ -156,7 +156,7 @@ export default function MonitoringPage() {
                 </div>
               )}
               <div className="absolute bottom-4 left-4 text-xs text-[#7e9bc9]">
-                Map placeholder • Integrate Mapbox/Leaflet for production
+                Project locations derived from allocation data • {liveProjects.length} active site{liveProjects.length !== 1 ? "s" : ""}
               </div>
             </div>
           </div>

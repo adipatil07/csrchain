@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       project: c.projectId, // we'll enrich below
       issueDate: c.issuedAt.toISOString().split("T")[0],
       hours: c.hours,
-      hash: c.blockchainTx || "0x" + Math.random().toString(16).slice(2, 42),
+      hash: c.blockchainTx || "",
       ipfsHash: c.ipfsHash,
       tokenId: `#${4000 + idx + 1}`,
       chain: "Polygon",

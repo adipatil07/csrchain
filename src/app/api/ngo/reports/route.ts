@@ -107,13 +107,19 @@ export async function GET(req: Request) {
     const volunteerHours = volunteers.reduce((s, v) => s + (v.volunteer?.totalHours ?? 0), 0);
 
     // ── Cumulative beneficiaries trend ───────────────────────────────────────
-    // Cumulative beneficiaries: use total across all projects as a flat value for trend
-    const totalBenef = projects.reduce((s, p) => s + p.beneficiaries, 0);
-    let runningBenef = 0;
-    const step = monthlyFlow.length > 0 ? Math.floor(totalBenef / monthlyFlow.length) : 0;
-    const benefTrend = monthlyFlow.map((m, i) => {
-      runningBenef = Math.min(step * (i + 1), totalBenef);
-      return { month: m.month, beneficiaries: runningBenef };
+    // Cumulative count of beneficiaries from ACTIVE/COMPLETED projects created up to each month
+    const benefTrend = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() - 5 + i + 1, 1);
+      const label = d.toLocaleString("en-IN", { month: "short", year: "2-digit" });
+      const cumulative = projects
+        .filter(
+          (p) =>
+            p.createdAt < endOfMonth &&
+            ["ACTIVE", "COMPLETED"].includes(p.status),
+        )
+        .reduce((s, p) => s + p.beneficiaries, 0);
+      return { month: label, beneficiaries: cumulative };
     });
 
     // ── Report Stubs ─────────────────────────────────────────────────────────

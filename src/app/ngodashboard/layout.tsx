@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bell, Settings, LayoutDashboard, FolderKanban, Upload, Activity,
-  Wallet, UserCheck, BarChart3, Menu, X, ChevronRight, Search, LogOut,
+  Wallet, UserCheck, BarChart3, Menu, X, ChevronRight, Search, LogOut, Cpu,
 } from 'lucide-react';
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/ngodashboard/funds', label: 'Fund Tracker', icon: Wallet },
   { href: '/ngodashboard/volunteers', label: 'Volunteers', icon: UserCheck },
   { href: '/ngodashboard/reports', label: 'Reports & Analytics', icon: BarChart3 },
+  { href: '/blockchain', label: 'Blockchain Explorer', icon: Cpu },
 ];
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
