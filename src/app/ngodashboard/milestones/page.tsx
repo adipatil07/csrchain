@@ -21,7 +21,8 @@ export default function MilestonesPage() {
   const [modal, setModal] = useState<MilestoneItem | null>(null);
   const [desc, setDesc] = useState('');
   const [photo, setPhoto] = useState('');
-  const [geo, setGeo] = useState('19.0760° N, 72.8777° E (Mumbai)');
+  const [geo, setGeo] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generated, setGenerated] = useState<{ ipfs: string; tx: string } | null>(null);
 
@@ -69,7 +70,36 @@ export default function MilestonesPage() {
     }
   };
 
-  const closeModal = () => { setModal(null); setDesc(''); setPhoto(''); setGenerated(null); };
+  const closeModal = () => { setModal(null); setDesc(''); setPhoto(''); setGeo(''); setGenerated(null); };
+
+  const openModal = (m: MilestoneItem) => {
+    setModal(m);
+    setDesc('');
+    setPhoto('');
+    setGenerated(null);
+    setGeo('Fetching location…');
+    setGeoLoading(true);
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(4);
+          const lng = pos.coords.longitude.toFixed(4);
+          const latDir = pos.coords.latitude >= 0 ? 'N' : 'S';
+          const lngDir = pos.coords.longitude >= 0 ? 'E' : 'W';
+          setGeo(`${Math.abs(Number(lat))}° ${latDir}, ${Math.abs(Number(lng))}° ${lngDir}`);
+          setGeoLoading(false);
+        },
+        () => {
+          setGeo('Location access denied — enter manually');
+          setGeoLoading(false);
+        },
+        { timeout: 8000 },
+      );
+    } else {
+      setGeo('Geolocation not supported — enter manually');
+      setGeoLoading(false);
+    }
+  };
 
   const statusStyle: Record<string, string> = {
     APPROVED: 'bg-green-100 text-green-700',
@@ -124,7 +154,7 @@ export default function MilestonesPage() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <span className="flex items-center gap-1 text-xs text-slate-500"><Clock3 size={13} />Due {u.deadline}</span>
-                  <button onClick={() => setModal(u)}
+                  <button onClick={() => openModal(u)}
                     className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-medium rounded-xl hover:shadow-lg hover:scale-105 transition">
                     Submit Proof
                   </button>
@@ -219,9 +249,29 @@ export default function MilestonesPage() {
                 <div>
                   <label className="text-xs font-semibold text-slate-600 uppercase">Geo-location</label>
                   <div className="mt-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                    <MapPin size={18} className="text-blue-600" />
-                    <input value={geo} onChange={e => setGeo(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" />
+                    {geoLoading
+                      ? <Loader2 size={18} className="text-blue-600 animate-spin flex-shrink-0" />
+                      : <MapPin size={18} className="text-blue-600 flex-shrink-0" />
+                    }
+                    <input
+                      value={geo}
+                      onChange={e => setGeo(e.target.value)}
+                      placeholder="Detecting your location…"
+                      className="flex-1 bg-transparent text-sm focus:outline-none"
+                    />
+                    {!geoLoading && (
+                      <button
+                        type="button"
+                        onClick={() => openModal(modal!)}
+                        className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                      >
+                        Re-detect
+                      </button>
+                    )}
                   </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    GPS coordinates auto-detected. You can edit manually if needed.
+                  </p>
                 </div>
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-800">
                   On submit, the proof bundle will be pinned to <span className="font-mono">IPFS</span> and its hash will be written to

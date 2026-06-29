@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FileCheck,
@@ -15,6 +15,8 @@ import {
   Bell,
   Search,
   Shield,
+  LogOut,
+  Cpu,
 } from "lucide-react";
 
 const navItems = [
@@ -25,7 +27,17 @@ const navItems = [
   { href: "/companydashboard/compliance", icon: FileText, label: "Compliance & Reports" },
   { href: "/companydashboard/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/companydashboard/profile", icon: Building2, label: "Organization Profile" },
+  { href: "/blockchain", icon: Cpu, label: "Blockchain Explorer" },
 ];
+
+function decodeToken(token: string): { name?: string; email?: string } {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return { name: payload.name, email: payload.email };
+  } catch {
+    return {};
+  }
+}
 
 export default function CompanyDashboardLayout({
   children,
@@ -33,12 +45,63 @@ export default function CompanyDashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [companyName, setCompanyName] = useState("CSR Portal");
+  const [userName, setUserName] = useState("Admin");
+  const [userInitials, setUserInitials] = useState("A");
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) { router.push("/login"); return; }
+
+    const decoded = decodeToken(token);
+    if (decoded.name) {
+      setUserName(decoded.name);
+      setUserInitials(
+        decoded.name
+          .split(" ")
+          .map((w: string) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
+      );
+    }
+
+    // Fetch real company profile
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/company/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.profile?.companyName) {
+            setCompanyName(data.profile.companyName);
+            setUserInitials(
+              data.profile.companyName
+                .split(" ")
+                .map((w: string) => w[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2),
+            );
+          }
+        }
+      } catch { /* ignore */ }
+    };
+    fetchProfile();
+  }, [router]);
 
   const isActive = (href: string) =>
     href === "/companydashboard"
       ? pathname === href
       : pathname.startsWith(href);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
 
   return (
     <div className="flex h-screen bg-[#0f1c3f] text-white">
@@ -50,12 +113,12 @@ export default function CompanyDashboardLayout({
       >
         <div className="p-6 border-b border-[#2d3f6b]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#1e90ff] to-[#0066cc] rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#1e90ff] to-[#0066cc] rounded-lg flex items-center justify-center flex-shrink-0">
               <Building2 className="w-6 h-6" />
             </div>
             {sidebarExpanded && (
-              <div>
-                <h1 className="font-bold text-lg">CSR Portal</h1>
+              <div className="min-w-0">
+                <h1 className="font-bold text-lg truncate">{companyName}</h1>
                 <p className="text-xs text-[#7e9bc9]">Corporate Panel</p>
               </div>
             )}
@@ -98,6 +161,22 @@ export default function CompanyDashboardLayout({
           </div>
         )}
 
+        {/* User info + logout */}
+        {sidebarExpanded && (
+          <div className="px-4 pb-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#06b6d4] flex items-center justify-center font-bold text-sm flex-shrink-0">
+              {userInitials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{userName}</p>
+              <p className="text-xs text-[#7e9bc9]">CSR Administrator</p>
+            </div>
+            <button onClick={handleLogout} title="Logout" className="p-1.5 rounded-lg hover:bg-[#243555] transition">
+              <LogOut className="w-4 h-4 text-[#7e9bc9]" />
+            </button>
+          </div>
+        )}
+
         <div className="p-4 border-t border-[#2d3f6b]">
           <button
             onClick={() => setSidebarExpanded(!sidebarExpanded)}
@@ -137,11 +216,11 @@ export default function CompanyDashboardLayout({
                 <Bell className="w-4 h-4 text-[#1a2847]" />
               </button>
               <div className="flex items-center gap-3 pl-3 border-l border-[#e5e7eb]">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#06b6d4] flex items-center justify-center font-bold text-white">
-                  TC
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#06b6d4] flex items-center justify-center font-bold text-white text-sm">
+                  {userInitials}
                 </div>
                 <div className="text-sm">
-                  <p className="font-semibold text-[#1a2847]">TechCorp India Ltd.</p>
+                  <p className="font-semibold text-[#1a2847]">{companyName}</p>
                   <p className="text-xs text-[#64748b]">CSR Administrator</p>
                 </div>
               </div>

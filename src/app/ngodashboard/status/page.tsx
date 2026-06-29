@@ -9,6 +9,8 @@ interface Project {
   id: string; proposalRef: string; name: string; partner: string; sector: string; location: string;
   progress: number; currentMilestone: string; escrow: string; totalBudget: string;
   startDate: string; endDate: string; lane: Lane; txHash: string; beneficiaries: number;
+  milestones: { title: string; status: string }[];
+  onTime: boolean;
 }
 
 const lanes: { key: Lane; label: string; color: string; bg: string }[] = [
@@ -33,7 +35,8 @@ export default function StatusPage() {
 
       const mapped: Project[] = (data.projects || []).map((p: {
         id: string; proposalRef: string; title: string; allocations: { company: { companyName: string } }[];
-        sector: string; location: string; progress: number; milestones: { title: string; status: string }[];
+        sector: string; location: string; progress: number;
+        milestones: { title: string; status: string; deadline?: string }[];
         escrowBalance: number; budget: number; startDate: string | null; endDate: string | null;
         lane: Lane; escrowTxHash: string | null; beneficiaries: number;
       }) => ({
@@ -52,6 +55,8 @@ export default function StatusPage() {
         lane: p.lane || 'PLANNING',
         txHash: p.escrowTxHash ? `${p.escrowTxHash.substring(0, 6)}...${p.escrowTxHash.slice(-4)}` : '—',
         beneficiaries: p.beneficiaries,
+        milestones: p.milestones ?? [],
+        onTime: !p.milestones?.some((m) => m.status === 'PENDING' && m.deadline && new Date(m.deadline) < new Date()),
       }));
 
       setProjects(mapped);
@@ -88,7 +93,7 @@ export default function StatusPage() {
           { label: 'Total Projects', value: projects.length.toString(), icon: Activity, color: 'from-blue-600 to-blue-700' },
           { label: 'In Escrow', value: `₹${totalInEscrow.toFixed(2)}L`, icon: Wallet, color: 'from-cyan-500 to-blue-500' },
           { label: 'Beneficiaries', value: totalBeneficiaries > 0 ? `${totalBeneficiaries.toLocaleString('en-IN')}` : '0', icon: Users, color: 'from-purple-500 to-pink-500' },
-          { label: 'On-Time Rate', value: '92%', icon: CheckCircle2, color: 'from-green-500 to-emerald-600' },
+          { label: 'On-Time Rate', value: projects.length > 0 ? `${Math.round((projects.filter(p => p.onTime).length / projects.length) * 100)}%` : '—', icon: CheckCircle2, color: 'from-green-500 to-emerald-600' },
         ].map((s, i) => {
           const Icon = s.icon;
           return (
@@ -191,15 +196,17 @@ export default function StatusPage() {
           <h4 className="font-bold text-slate-800 mb-4">Milestone Timeline</h4>
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-            {['Kickoff & Baseline', 'Phase 1 Execution', selected.currentMilestone, 'Final Review', 'Closure'].map((m, idx) => {
-              const done = idx < Math.floor(selected.progress / 25);
-              const current = idx === Math.floor(selected.progress / 25);
+            {(selected.milestones.length > 0 ? selected.milestones : [{ title: selected.currentMilestone, status: 'PENDING' }]).map((m, idx) => {
+              const done = m.status === 'APPROVED';
+              const current = m.status === 'SUBMITTED' || m.status === 'PENDING';
               return (
                 <div key={idx} className="relative pl-12 pb-5 last:pb-0">
-                  <div className={`absolute left-1.5 w-5 h-5 rounded-full border-4 ${done ? 'bg-green-500 border-green-200' : current ? 'bg-blue-500 border-blue-200 animate-pulse' : 'bg-white border-slate-300'}`}></div>
+                  <div className={`absolute left-1.5 w-5 h-5 rounded-full border-4 ${done ? 'bg-green-500 border-green-200' : current && idx === selected.milestones.findIndex(x => x.status === 'PENDING' || x.status === 'SUBMITTED') ? 'bg-blue-500 border-blue-200 animate-pulse' : done ? 'bg-green-500 border-green-200' : 'bg-white border-slate-300'}`}></div>
                   <div className="bg-slate-50 rounded-xl px-4 py-3">
-                    <p className="font-semibold text-slate-800 text-sm">{m}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{done ? 'Verified on-chain' : current ? 'In progress' : 'Upcoming'}</p>
+                    <p className="font-semibold text-slate-800 text-sm">{m.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {m.status === 'APPROVED' ? 'Verified on-chain' : m.status === 'SUBMITTED' ? 'Awaiting verification' : m.status === 'REJECTED' ? 'Rejected — resubmit required' : 'Upcoming'}
+                    </p>
                   </div>
                 </div>
               );

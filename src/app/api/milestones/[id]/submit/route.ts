@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthUser, unauthorized, badRequest, notFound, serverError } from '@/lib/api-helpers';
+import { uploadMilestoneProof } from '@/lib/ipfs';
 
 // PUT /api/milestones/[id]/submit — NGO submits proof for a milestone
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +12,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params;
     const body = await req.json();
-    const { proofDesc, geoLocation, proofIpfsHash, proofPhotoHash } = body;
+    const { proofDesc, geoLocation, proofPhotoHash } = body;
 
     if (!proofDesc) return badRequest('Proof description is required');
 
@@ -22,8 +23,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return badRequest('Only PENDING milestones can be submitted');
     }
 
-    // Generate mock IPFS hash if not provided (will be replaced by real Pinata in Day 6)
-    const ipfsHash = proofIpfsHash || `Qm${Math.random().toString(36).substring(2, 10).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const ipfsHash = await uploadMilestoneProof({
+      milestoneId: id,
+      projectId: milestone.projectId,
+      description: proofDesc,
+      geoLocation: geoLocation ?? undefined,
+      submittedAt: new Date().toISOString(),
+    });
 
     const updated = await prisma.milestone.update({
       where: { id },
